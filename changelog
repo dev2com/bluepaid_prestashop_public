@@ -1,0 +1,12 @@
+*** V.2.9.3 28/05/2015 *******
+V2.9.3 --- V2.9.7
+Révision
+V2.9.2
+Ajout de vérifications lors de l'appel au fichier de confirmations de commandes
+Vérification de l'iedntifiant commerçant retourné
+V2.9.1
+- Rétro-compatibilité avec versions Prestashop < 1.6
+- Ajout des urls de retours dynamiques
+V2.8
+- Ajout d'un champ de configuation pemrttant un accès restreint aux serveurs appelant le fhcier de confirmation de commande
+- Accèes restreint aux appels en méthode POST pour l'url de confirmation.

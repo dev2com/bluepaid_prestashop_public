@@ -1,54 +1,24 @@
 <?php
-/**
- * Bluepaid payment
- *
- * Accept payment by CB with Bluepaid.
- *
- * @class 		Bluepaid
- * @version		2.8
- * @category	Payment
- * @author 		Dev2Com - Julien L.
- */
-//------------------------------
-if(!file_exists('logs'))
-	mkdir('logs');
-$file = "logs/logs-".date("Y-m-d").".txt";
-$fd = fopen($file, "a+");
-$data = "--------------------------------- \n";
-$data .= date("d-m-Y H:i:s")." \n";
-$data .= "--------------------------------- \n";
-$data .= "--------------------------------- \n";
-if(isset($_POST)){
-	foreach($_POST as $key=>$val){
-		$data .= $key."=>".$val."\n";
-	}
-}
-
-if(isset($_GET)){
-	foreach($_GET as $key=>$val){
-		$data .= $key."=>".$val."\n";
-	}
-}
-$data .= "--------------------------------- \n";
-fwrite($fd, $data);
-fclose($fd);
-//--------------------
-	
 if('POST' != $_SERVER['REQUEST_METHOD']){
-	die('Accès non autorisé');
+	header($_SERVER['SERVER_PROTOCOL'].' 500 Error while checking request', true, 500);
+	die('500 Error while checking request');
 }
 	
 $test_etat=false;
 if(isset($_REQUEST['etat']) && !empty($_REQUEST['etat'])){
 	$test_etat=strtolower($_REQUEST["etat"]);
-	if($test_etat=="ok"||$test_etat=="ko"){}
+	if($test_etat=="ok"||$test_etat=="ko"||$test_etat=="test"){}
 	else{
 		$test_etat=false;
 	}
 }
 if($test_etat){
-	
-	include_once(dirname(__FILE__).'/../../config/config.inc.php');
+		
+
+	require_once(dirname(__FILE__).'/../../config/config.inc.php');
+	/** Call init.php to initialize context */
+	require_once(dirname(__FILE__).'/../../init.php');
+	include_once(dirname(__FILE__).'/bluepaid.php');
 	
 	$id_cart 	= Tools::getValue('id_client');
 	$testEtat	= strtolower(Tools::getValue('etat'));
@@ -75,9 +45,9 @@ if($test_etat){
 	if (!$cart->id)
 		exit();	
 	$customer = new Customer(intval($cart->id_customer));
-		
 	
-	global $cookie, $cart;	
+	global $cookie;	
+	//global $cart;	
 	if (!Order::getOrderByCartId($cart->id))
 	{
 			if(isset($_REQUEST["mode"]) && Tools::getValue('mode')=="test"){
@@ -88,75 +58,154 @@ if($test_etat){
 			$feedback.= " Transaction ".Tools::getValue('id_trans');			
 	}
 	
-	if($id_order = Order::getOrderByCartId(intval($cart->id)))
-		$order = new Order(intval($id_order));	
+	if($id_order = Order::getOrderByCartId((int)$cart->id))
+		$order = new Order((int)$id_order);
 		
-	include_once(dirname(__FILE__).'/bluepaid.php');	
+	$order_id = $id_order;	
+		
 	$payment = new bluepaid();
 		
+	/*
+	 *
+	 *	Check caller
+	 *
+	 */
 	if(!$payment->Is_authorizedIp($_SERVER['REMOTE_ADDR'])){
 		die('INVALID SOURCE '.$_SERVER['REMOTE_ADDR']);
-	}	
+	}
+		
+	/*
+	 *
+	 *	Check customer secure key
+	 *
+	 */
 	if ($customer->secure_key != $hashControl){
 		$orderState = _PS_OS_CANCELED_;
-		$errors .= $payment->displayName.$payment->l('hash control invalid (data do not come from Bluepaid)')."\n";
+		die('hash control invalid (data do not come from Bluepaid)')."\n";
 	}
-				
-	switch($testEtat){
-		case "ok":
-			if(isset($_REQUEST["mode"])){
-				$testValue=strtolower(Tools::getValue('mode'));
-				switch($testValue){
-					case "test":
-						//$id_order_state = Configuration::get('PS_OS_PAYMENT');
-						$id_order_state = Configuration::get('PS_OS_ERROR');
-						$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', $feedback, "", $cart->id_currency, false, $cart->secure_key);							
-					break;
-					
-					case "r":
-						##PAIEMENT ANNULE
-						/*$id_order_state = Configuration::get('PS_OS_REFUND');
-						$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', $feedback, NULL, $cart->id_currency, false, $cart->secure_key);	*/
-						
-						$history = new OrderHistory();
-						$history->id_order = (int)$cart->id;
-						$history->changeIdOrderState(Configuration::get('PS_OS_REFUND'), $history->id_order);
-						$history->addWithemail();
-					break;
-					
-					case "":
-					case " ":
-						$id_order_state = Configuration::get('PS_OS_PAYMENT');
-						$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', $feedback, "", $cart->id_currency, false, $cart->secure_key);		
-						$id_order = Order::getOrderByCartId(intval($cart->id));
-						$history = new OrderHistory();
-						$history->id_order = $id_order;
-						$history->changeIdOrderState(Configuration::get('PS_OS_PAYMENT'), $id_order);
-						if ($cookie->id_cart == intval($cookie->last_id_cart))
-							unset($cookie->id_cart);
-					break;
+	
+	/*
+	 *
+	 *	Check merchant Id returned by Bluepaid
+	 *
+	 */
+	if((($payment->get_bouticId() !== Tools::getValue('id_boutique')) || !$payment->get_bouticId() || !Tools::getValue('id_boutique') || Tools::getValue('id_boutique') == '')){
+		die('INVALID MERCHANT ID '.Tools::getValue('id_boutique').' FOR THIS BOUTIC !');
+	}
+		
+		
+	
+	
+	switch (strtolower(Tools::getValue('mode')))
+	{
+		case '':
+		case ' ':
+		case 'test':
+			if ($order_id == false)
+			{
+				/* order has not been processed yet */
+				switch (strtolower(Tools::getValue('etat')))
+				{
+					case 'ok':
+					case 'test':
+						/* payment OK */
+						$order = $payment->saveOrder($cart, _PS_OS_PAYMENT_, $_POST);
+						if (number_format($order->total_paid, 2) != number_format($order->total_paid_real, 2))
+						{
+							/* amount paid not equals initial amount. */
+							die('Le montant payé est différent du montant intial');
+						}
+						else
+							/* response to server */
+							die('Payment validated !');
+
+					case 'ko':
+						/* payment KO */
+						$order = $payment->saveOrder($cart, Configuration::get('PS_OS_ERROR'), $_POST);
+						die('Payment KO !');
+
+					case 'attente':
+						die('Prestashop awaiting for your final response !! ');
+
+					default:
+						die('NOT RECOGNIZED STATUS !! '.Tools::getValue('etat'));
 				}
-				
-			}else{
-				$id_order_state = Configuration::get('PS_OS_PAYMENT');
-				$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', $feedback, "", $cart->id_currency, false, $cart->secure_key);	
 			}
-		break;
-		
-		case "ko":
-			$id_order_state = Configuration::get('PS_OS_ERROR');
-			$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', "Transaction securisee par Bluepaid", "", $cart->id_currency, false, $cart->secure_key);	
-		break;
-		
-		case "attente":
-			//On ne fait rien c l'état initial
-		break;
-		
-		default:			
-			//$id_order_state = Configuration::get('PS_OS_ERROR');
-			//$payment->validateOrder(intval($cart->id), $id_order_state, $amount, 'bluepaid', $feedback, NULL, $cart->id_currency, false, $cart->secure_key);	
-		break;
-	}	
+			else
+			{
+				/* order already registered */
+
+				$order = new Order((int)$order_id);
+				$old_state = $order->getCurrentState();
+
+				switch ($old_state)
+				{
+					case Configuration::get('PS_OS_ERROR'):
+					case Configuration::get('BLUEPAID_STATUS_REFUSED_DEBUG'):
+					case Configuration::get('PS_OS_CANCELED'):
+						if (Tools::getValue('id_trans') == 'ok')
+						{
+							if (Tools::getValue('num_abo') && Tools::getValue('num_abo') > 0)
+							{
+								$order = $payment->saveOrder($cart, _PS_OS_PAYMENT_, $_POST);
+								$msg = 'payment_ok_on_multi_payments';
+							}
+							else
+							{
+							/* order saved with failed status while payment is successful */
+								if (number_format($order->total_paid, 2) != number_format($order->total_paid_real, 2))
+								{
+									/* amount paid not equals initial amount. */
+									die('Le montant payé est différent du montant intial');
+								}
+								else
+									die('Error: payment success received from platform while order is in a failed status, cart #'.$cart->id.'.');
+								$msg = 'payment_ko_on_order_ok';
+							}
+						}
+						else
+						{
+							/* just display a failure confirmation message */
+							$msg = 'payment_ko_already_done';
+						}
+						die($msg);
+					case Configuration::get('PS_OS_PAYMENT'):
+					case Configuration::get('BLUEPAID_STATUS_ACCEPTED_DEBUG'):
+					case ($old_state == Configuration::get('PS_OS_OUTOFSTOCK')):
+
+						if (Tools::getValue('etat') == 'ok')
+						{
+							if (Tools::getValue('num_abo') && Tools::getValue('num_abo') > 0)
+							{
+								$order = $payment->saveOrder($cart, _PS_OS_PAYMENT_, $_POST);
+								$msg = 'payment_ok_on_multi_payments';
+							}
+							else
+								/* just display a confirmation message */
+								$msg = 'payment_ok_already_done';
+						}
+						else
+						{
+							if (Tools::getValue('num_abo') && Tools::getValue('num_abo') > 0)
+							{
+								$order = $payment->saveOrder($cart, Configuration::get('PS_OS_ERROR'), $_POST);
+								$msg = 'payment_ko_on_multi_payments';
+							}
+							else
+							/* order saved with success status while payment failed */
+							$msg = 'payment_ko_on_order_ok';
+						}
+						die($msg);
+
+					default:
+						die('NOT RECOGNIZED STATUS '.Tools::getValue('etat').' !! ');
+				}
+			}
+			break;
+		case 'r':
+			/* just display a confirmation message */
+			die('REFUND TRANSACTION '.Tools::getValue('id_trans'));
+	}			
 }
 
 ?>

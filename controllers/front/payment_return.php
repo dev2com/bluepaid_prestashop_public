@@ -1,17 +1,13 @@
 <?php
-/**
- * Bluepaid payment
- *
- * Accept payment by CB with Bluepaid.
- *
- * @class 		Bluepaid
- * @version		2.1
- * @category	Payment
- * @author 		Bluepaid - Julien L.
- */
-require_once(dirname(__FILE__).'/../../config/config.inc.php');
-require_once(dirname(__FILE__).'/../../init.php');
-require_once(dirname(__FILE__).'/bluepaid.php');
+require_once(dirname(__FILE__).'./../../../../config/config.inc.php');
+/** Call init.php to initialize context */
+require_once(dirname(__FILE__).'/../../../../init.php');
+require_once(dirname(__FILE__).'/../../bluepaid.php');
+ini_set('default_charset', 'UTF-8');
+
+
+$order_confirmation_filename = "index.php?controller=order-confirmation";
+if (version_compare(_PS_VERSION_, '1.6', '<'))$order_confirmation_filename = "order-confirmation.php";
 
 $payment = new bluepaid();
 
@@ -67,7 +63,14 @@ if (!empty($errors) AND isset($id_cart) AND isset($amount))
 	if ($cookie->id_cart == intval($cookie->last_id_cart))
 		unset($cookie->id_cart);
 }
-$url = 'order-confirmation.php?';
+
+if (version_compare(_PS_VERSION_, '1.6', '<')) 
+	$url = $order_confirmation_filename.'?';
+else
+	$url = $order_confirmation_filename.'&';
+	
+
+
 if (!empty($errors) OR !$id_cart){
 	$url.= 'error=true';
 }
