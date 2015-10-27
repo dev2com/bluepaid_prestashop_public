@@ -22,6 +22,8 @@ $_MODULE['<{bluepaid}prestashop>payment_return_737c04b26e9e352411e6cdaca7b4ac50'
 $_MODULE['<{bluepaid}prestashop>payment_return_219747f2d5260e7d31f63bcd21414a1e'] = 'Transaction acceptée';
 $_MODULE['<{bluepaid}prestashop>payment_return_3a881a13316876a92c642cede0dd9c44'] = 'Une ou plusieurs erreurs sont intervenues durant la validation';
 $_MODULE['<{bluepaid}prestashop>payment_return_3e2b4629bf2785c8b9b2981dc3c16a6f'] = 'Contôle de hashage invalide (données ne provenant pas de Bluepaid)';
+$_MODULE['<{bluepaid}prestashop>sendabotobpi_d84891524b47585a131b11473902e22a'] = 'Vous allez être redirigé ves la plateforme Bluepaid';
+$_MODULE['<{bluepaid}prestashop>sendtobpi_d84891524b47585a131b11473902e22a'] = 'Vous allez être redirigé vers la plateforme Bluepaid';
 $_MODULE['<{bluepaid}prestashop>admin_a9d58ba6d1ee43992c54d5a6b31b8bac'] = 'L\'identifiant de compte est fourni par Bluepaid. Si vous ne possédez pas d\'informations d\'identification, vous pouvez créer un compte en cliquant ';
 $_MODULE['<{bluepaid}prestashop>admin_6c92285fa6d3e827b198d120ea3ac674'] = 'ici';
 $_MODULE['<{bluepaid}prestashop>admin_125d1c8d0f63143345e11f58e6dd4dd8'] = 'Identifiant de compte Bluepaid';

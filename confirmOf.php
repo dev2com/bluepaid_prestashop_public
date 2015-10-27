@@ -143,7 +143,7 @@ if($test_etat){
 					case Configuration::get('PS_OS_ERROR'):
 					case Configuration::get('BLUEPAID_STATUS_REFUSED_DEBUG'):
 					case Configuration::get('PS_OS_CANCELED'):
-						if (Tools::getValue('id_trans') == 'ok')
+						if (Tools::getValue('etat') == 'ok')
 						{
 							if (Tools::getValue('num_abo') && Tools::getValue('num_abo') > 0)
 							{

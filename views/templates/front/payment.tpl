@@ -35,7 +35,6 @@ var win2 = window.open("http://www.bluepaid.com",'popup','height=705,width=610,s
         	<a class="payment" href="{$modules_dir|escape:'html':'UTF-8'}bluepaid/controllers/payment/sendtoBPI.php?payment=1">
         		<img width="50" src="{$modules_dir}bluepaid/views/img/cadenas_mini.png" /> 
 				{l s='Bluepaid, pay safely by credit card.' mod='bluepaid'}
-				<span style="font-size:0.7em; text-align:right; display:block" onClick="popuprnp1xrnp();return false;"><u>{l s='What is Bluepaid ?' mod='bluepaid'}</u></span>
 			</a>
 		</b>
 	</p>
@@ -46,11 +45,6 @@ var win2 = window.open("http://www.bluepaid.com",'popup','height=705,width=610,s
         	<a class="payment" href="{$modules_dir|escape:'html':'UTF-8'}bluepaid/controllers/payment/sendabotoBPI.php?payment=1">
             	<img width="50" src="{$modules_dir}bluepaid/views/img/cadenas_mini.png" /> 
            	 	{l s='Bluepaid, pay safely in' mod='bluepaid'} {$bluepaid_multipayment_nbmax} {l s='times by credit card.' mod='bluepaid'}
-              	{if $init_percent_amount}
-                	<br />
-                    <span style="font-size:0.8em; text-transform:lowercase;">{l s='With a down payment of ' mod='bluepaid'} {$init_percent_amount} % {l s=' of the total performed today' mod='bluepaid'}</span>
-                {/if}
-				<span style="font-size:0.7em; text-align:right; display:block" onClick="popuprnp1xrnp();return false;"><u>{l s='What is Bluepaid ?' mod='bluepaid'}</u></span>
 			</a>
 		</b>
 	</p>

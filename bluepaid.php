@@ -5,7 +5,7 @@
  * Accept payment by CB with Bluepaid.
  *
  * @class 		Bluepaid
- * @version		2.9.8.2
+ * @version		2.9.8.7
  * @category	Payment
  * @author 		Dev2Com
  */
@@ -21,7 +21,7 @@ class Bluepaid extends PaymentModule
 	public function __construct()
 	{
 		$this->name = 'bluepaid';
-		$this->version = '2.9.8.2';
+		$this->version = '2.9.8.7';
 		$this->tab = 'payments_gateways';
 		$this->need_instance = 1;
 		$this->controllers = array('payment', 'validation');
@@ -313,12 +313,17 @@ class Bluepaid extends PaymentModule
 			$bluepaid_multipayment_nbmax = Configuration::get('BPI_XPAY_NBOCCUR');		
 			$context->smarty->assign(array(
 				'credit' => (in_array("1", $type)),
+				'bluepaid_multipayment' => true,
 				'bluepaid_multipayment_nbmax' => $bluepaid_multipayment_nbmax,
 			));	
 			//With a first payment
 			if (Configuration::get('BPI_XPAY_INITAMOUNT') > 0)
 			{
 				$context->smarty->assign('init_percent_amount', Configuration::get('BPI_XPAY_INITAMOUNT'));	
+				$context->smarty->assign('init_percent_amount', true);	
+			} else {
+				$context->smarty->assign('init_percent_amount', false);	
+				
 			}
 		}
 		$cookie->bpi_payment = true;
@@ -402,7 +407,7 @@ class Bluepaid extends PaymentModule
 	}
   	
 	function get_bouticId(){
-		return Configuration::get('BPI_MERCHID');
+		return trim(Configuration::get('BPI_MERCHID'));
 	}
   
 	  function bpi_crypt($private_key, $str_to_crypt) {
@@ -615,7 +620,7 @@ class Bluepaid extends PaymentModule
 			$merchid = $conf['BPI_MULTI_ACCOUNTID'];
 			if (!$merchid)$merchid = $conf['BPI_MERCHID'];
 		}
-		return $merchid;
+		return trim($merchid);
 	}
 	/**
 	 * Save payment information.
@@ -794,6 +799,13 @@ class Bluepaid extends PaymentModule
 	  	}
 	}
 
+	public static function redirectForVersion($link)
+	{
+		if (version_compare(_PS_VERSION_, '1.5', '<'))
+			Tools::redirectLink($link);
+		else
+			Tools::redirect($link);
+	}
 }
 
 ?>

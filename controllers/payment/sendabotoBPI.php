@@ -30,6 +30,7 @@ if (version_compare(_PS_VERSION_, '1.6', '<'))
 	$currency = new Currency(intval($cart->id_currency));
 	$used_currency = $currency->iso_code;
 	$customer = new Customer(intval($cart->id_customer));
+	$iso_code_lang = Language::getIsoById( (int)$cookie->id_lang );
 }
 else
 {	
@@ -51,18 +52,14 @@ if (version_compare(_PS_VERSION_, '1.6', '<'))$order_filename = "order.php?step=
 
 if (!isset($cookie->bpi_payment) || $cookie->bpi_payment === false)
 	Tools::redirect('order.php');
+	
+if ((!Configuration::get('BPI_MERCHID') ||  Configuration::get('BPI_MERCHID') === '') || (!$amount_total || $amount_total <=0))
+	Tools::redirect('order.php');
+	
 unset($cookie->bpi_payment);
 
 	
 $bluepaid = new Bluepaid();
-
-
-$form='';
-$form='<center><h1>Vous allez &#234;tre redirig&#233; sur la plateforme de paiement Bluepaid ...</h1></center>';
-$form.='<form action="'.$url.'" method="POST" name="bpi_formPay">';
-$form.='<input type="hidden" name="ID_BOUTIQUE" value="'.Configuration::get('BPI_MERCHID').'" >';
-$form.='<input type="hidden" name="ID_CLIENT" value="'.$cart_id.'" >';
-
 
 // ----- NUMBER OF OCUR ------
 $max_occur = $bluepaid->_get_maxOccur();
@@ -106,51 +103,49 @@ if (ceil(round($delta, 2)) > 0);
 	}
 }
 
-//die("AMOUNT OCU : $amount_ocu, check : $check, NUMBER OF OCUR : $max_occur, amount total : $amount_total, delta : $delta, init amount : $initamount");	
-		
+	
+$params = array();
+$params['ID_BOUTIQUE'] = Configuration::get('BPI_MERCHID');
+$params['ID_CLIENT'] = $cart_id;	
 
 
 if($initamount){
-	$form.='<input type="hidden" name="MONTANT_INITIAL" value="'.number_format($initamount, 2, '.', '').'" >';
+	$params['MONTANT_INITIAL'] = number_format($initamount, 2, '.', '');
 }
 
-$form.='<input type="hidden" name="MONTANT" value="'.number_format($amount_ocu, 2, '.', '').'" >';
+$params['MONTANT'] = number_format($amount_ocu, 2, '.', '');
 
 if($temp=$bluepaid->get_nbShowIfKo()){
 	if($temp>0){
 		//Définit le nombre de jours entre chaque représentation de l'occurence ayant échouée
-		$form.='<input type="hidden" name="TOLERANCE_JOURS" value="2" >';		
-		$form.='<input type="hidden" name="TOLERANCE_NBMAX" value="'.$temp.'" >';
+		$params['TOLERANCE_JOURS'] = 2;
+		$params['TOLERANCE_NBMAX'] = $temp;
 	}
 }
 
 
 if($bluepaid->_get_maxOccur()){
-	$form.='<input type="hidden" name="NB_OCCURENCES_MAX" value="'.$max_occur.'" >';
+	$params['NB_OCCURENCES_MAX'] = $max_occur;
 }
-$form.='<input type="hidden" name="PERIODE_NB" value="1" >';
-$form.='<input type="hidden" name="PERIODE_TYPE" value="M" >';
-$form.='<input type="hidden" name="TYPE_ABO" value="STANDARD" >';
-
-$form.='<input type="hidden" name="DEVISE" value="'.$used_currency.'" >';
-$form.='<input type="hidden" name="DIVERS" value="'.$customer->secure_key.'" >';
-$form.='<input type="hidden" name="EMAIL_CLIENT" value="'.$customer->email.'" >';
-$form.='<input type="hidden" name="URL_RETOUR_BO" value="paiement-securise.bluepaid.com/services/bp_return_customer.php" >';
 
 
-$form.='<input type="hidden" name="URL_RETOUR_OK" value="'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/bluepaid/controllers/front/payment_return.php" >';
-$form.='<input type="hidden" name="URL_RETOUR_STOP" value="'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.$order_filename.'" >';
+$params['PERIODE_NB'] = 1;
+$params['PERIODE_TYPE'] = 'M';
+$params['TYPE_ABO'] = "STANDARD";
+$params['DEVISE'] = $used_currency;
+$params['DIVERS'] = $customer->secure_key;
+$params['EMAIL_CLIENT'] = $customer->email;
+$params['LANGUE'] = strtoupper($iso_code_lang);
+$params['URL_RETOUR_BO'] = 'paiement-securise.bluepaid.com/services/bp_return_customer.php';
+$params['URL_RETOUR_OK'] = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/bluepaid/controllers/front/payment_return.php';
+$params['URL_RETOUR_STOP'] = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.$order_filename;
+$params['HvTag'] = 'D2C_ps_bpi.bluepaid.com.php';
+$params['pvD2CBPI'] = 'BPD2CX_PS';
+$params['pvD2CBPI_v'] = $bluepaid->version;
 
-$form.='<input type="hidden" name="HvTag" value="D2C_ps_bpi_mp.bluepaid.com.php" >';
+//$params['set_secure_return'] = 'true';
+//$params['set_secure_conf'] = 'true';
 
-$form.='</form>';
+$url_params = http_build_query($params);
 
-echo $form;
-echo'<script>document.bpi_formPay.submit();</script>';
-
-
-/*
-<input type="hidden" name="set_secure_return" value="true" >
-<input type="hidden" name="set_secure_conf" value="true" >
-*/
-
+$bluepaid->redirectForVersion($url.'?'.$url_params);

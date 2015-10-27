@@ -1,14 +1,44 @@
-# bluepaid_prestashop_public
-Module de paiement bluepaid pour prestashop
+# Bluepaid multi payments
+
+## About
+
+Accept payments by credit card for your products via bluepaid.
+
+
+### Requirements
+
+Contributors **must** follow the following rules:
+
+* **Make your Pull Request on the "dev" branch**, NOT the "master" branch.
+* Do not update the module's version number.
+* Follow [the coding standards][1].
+
+### Process in details
+
+Contributors wishing to edit a module's files should follow the following process:
+
+1. Create your GitHub account, if you do not have one already.
+2. Fork the bluepaidmulti project to your GitHub account.
+3. Clone your fork to your local machine in the ```/modules``` directory of your PrestaShop installation.
+4. Create a branch in your local clone of the module for your changes.
+5. Change the files in your branch. Be sure to follow [the coding standards][1]!
+6. Push your changed branch to your fork in your GitHub account.
+7. Create a pull request for your changes **on the _'dev'_ branch** of the module's project. Be sure to follow [the commit message norm][2] in your pull request. If you need help to make a pull request, read the [Github help page about creating pull requests][3].
+8. Wait for one of the core developers either to include your change in the codebase, or to comment on possible improvements you should make to your code.
+
+That's it: you have contributed to this open-source project! Congratulations!
+
+[1]: http://doc.prestashop.com/display/PS16/Coding+Standards
+[2]: http://doc.prestashop.com/display/PS16/How+to+write+a+commit+message
+[3]: https://help.github.com/articles/using-pull-requests
+
 
 
 ***INSTALLATION*****
-Dézipper le fichier bluepaid
-Envoyer l'intégralité du dossier bluepaid par FTP sur votre serveur
-dans le dossier prestashop/modules/
-
 Depuis votre interface Prestashop : 
 Onglet Modules
+=> Cliquer sur "Ajouter un nouveau module"
+=> Cliquer sur "Parcourir", sélectionner le module téléchargé (bluepaid.zip) sur votre ordinateur puis cliquer sur "Charger le module"
 => Section paiement
 => Cliquer sur le bouton "Installer" en face du module Bluepaid
 => Une fois installé (Module installé)
@@ -33,17 +63,12 @@ Onglet Modules
 ************************************************
 MISE A JOUR DES URLS DE RETOUR APRES TRANSACTION
 	URL REFERENTE => Indiquez l'Url de votre site Internet
-	Url du logo => Indiquez l'adresse où se trouve votre logo sur votre serveur. Ce logo sera affiché sur la page de paiement Bleuapid
-	Url de retour après transaction => url_de_votre_site/modules/bluepaid/payment_return.php
-	Url de retour si clic sur retour boutique sans validation de la page de paiement => url_de_votre_site/order.php
+	Url du logo => Indiquez l'adresse où se trouve votre logo sur votre serveur. Ce logo sera affiché sur la page de paiement Bluepaid
 	Url de confirmation => url_de_votre_site/modules/bluepaid/confirmOf.php
 	
 !! ATTENTION !! Pour des raisons de sécurité, il est fortement conseillé de modifier le nom du fichier de confirmation (/modules/bluepaid/confirmOf.php) et de reporter le nouveau nom sur votre espace client Bluepaid. Par exemple, /modules/bluepaid/confirmOf.php deviendra /modules/bluepaid/fzeevgfre_monfichierdeconfirmation_fzse.php
 	
-	
-V2.8
-- Ajout d'un champ de configuation pemrttant un accès restreint aux serveurs appelant le fhcier de confirmation de commande
-- Accèes restreint aux appels en méthode POST pour l'url de confirmation.
-	
 
+
+	
 

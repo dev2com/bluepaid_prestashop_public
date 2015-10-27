@@ -29,6 +29,7 @@ if (version_compare(_PS_VERSION_, '1.6', '<'))
 	$currency = new Currency(intval($cart->id_currency));
 	$used_currency = $currency->iso_code;
 	$customer = new Customer (intval($cart->id_customer));
+	$iso_code_lang = Language::getIsoById( (int)$cookie->id_lang );
 }
 else
 {	
@@ -51,30 +52,34 @@ if (version_compare(_PS_VERSION_, '1.6', '<'))$order_filename = "order.php?step=
 
 if (!isset($cookie->bpi_payment) ||  $cookie->bpi_payment === false)
 	Tools::redirect('order.php');
+	
+if ((!Configuration::get('BPI_MERCHID') ||  Configuration::get('BPI_MERCHID') === '') || (!$amount || $amount <=0))
+	Tools::redirect('order.php');
+	
 unset($cookie->bpi_payment);
 	
 $bluepaid = new Bluepaid();
 
-	
-echo '
-<center><h1>Vous allez &#234;tre redirig&#233; sur la plateforme de paiement Bluepaid ...</h1></center>
-<form action="'.$url.'" method="POST" name="bpi_formPay">
-<input type="hidden" name="id_boutique" value="'.Configuration::get('BPI_MERCHID').'" >
-<input type="hidden" name="id_client" value="'.$cart_id.'" >
-<input type="hidden" name="montant" value="'.$amount.'" >
-<input type="hidden" name="devise" value="'.$used_currency.'" >
-<input type="hidden" name="langue" value="FR" >
-<input type="hidden" name="divers" value="'.$customer->secure_key.'" >
-<input type="hidden" name="email_client" value="'.$customer->email.'" >
-<input type="hidden" name="url_retour_bo" value="paiement-securise.bluepaid.com/services/bp_return_customer.php" >
-<input type="hidden" name="url_retour_ok" value="'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/bluepaid/controllers/front/payment_return.php" >
-<input type="hidden" name="url_retour_stop" value="'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.$order_filename.'" >
-<input type="hidden" name="HvTag" value="D2C_ps_bpi.bluepaid.com.php" >
-</form>
-<script>document.bpi_formPay.submit();</script>';
 
-/*
-<input type="hidden" name="set_secure_return" value="true" >
-<input type="hidden" name="set_secure_conf" value="true" >
-*/
+$params = array();
+$params['id_boutique'] = Configuration::get('BPI_MERCHID');
+$params['id_client'] = $cart_id;
+$params['montant'] = $amount;
+$params['devise'] = $used_currency;
+$params['langue'] = strtoupper($iso_code_lang);
+$params['divers'] = $customer->secure_key;
+$params['email_client'] = $customer->email;
+$params['url_retour_bo'] = 'paiement-securise.bluepaid.com/services/bp_return_customer.php';
+$params['url_retour_ok'] = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/bluepaid/controllers/front/payment_return.php';
+$params['url_retour_stop'] = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.$order_filename;
+$params['HvTag'] = 'D2C_ps_bpi.bluepaid.com.php';
+$params['pvD2CBPI'] = 'BPD2C_PS';
+$params['pvD2CBPI_v'] = $bluepaid->version;
+
+//$params['set_secure_return'] = 'true';
+//$params['set_secure_conf'] = 'true';
+
+$url_params = http_build_query($params);
+
+$bluepaid->redirectForVersion($url.'?'.$url_params);
 
